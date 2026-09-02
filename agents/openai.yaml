@@ -1,0 +1,4 @@
+interface:
+  display_name: "腾讯云项目部署"
+  short_description: "通过 SSH 和 Docker 独立部署及测试多个项目"
+  default_prompt: "Use $deploy-tencent-project to deploy and test the current project on tencent-dev."
