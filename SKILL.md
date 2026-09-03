@@ -1,6 +1,6 @@
 ---
 name: deploy-tencent-project
-description: Deploy and test completed local projects on the Tencent Cloud host `tencent-dev` using Git, SSH, Docker Compose, health checks, SSH tunnels, and browser/API tests. Use when the user asks to publish, deploy, redeploy, update, restart, inspect, or test a current project on the Tencent server, including first-time setup and isolated multi-project deployments.
+description: Deploy and test completed local projects on a Tencent Cloud host using Git, SSH, Docker Compose, health checks, SSH tunnels, and browser/API tests. Use whenever the user asks to publish, deploy, redeploy, update, restart, inspect, or test a current project on the cloud server — including first-time setup and isolated multi-project deployments. The skill keeps every project isolated by repo, deployment directory, Compose project name, ports, containers, networks, and volumes.
 ---
 
 # Deploy Tencent Project
@@ -18,7 +18,7 @@ Deploy only the current Git project. Keep every project isolated by repository, 
 
 ## Isolate Concurrent Sessions
 
-- Assume another Codex task may be using the visible checkout. Inspect `git worktree list` before switching branches.
+- Assume another agent task may be using the visible checkout. Inspect `git worktree list` before switching branches.
 - When branch switching could disturb another task, create a dedicated deployment worktree and run every local Git, test, and deploy command from it.
 - Never switch, reset, clean, or remove another task's worktree. Keep the deployment worktree until deployment and verification finish.
 - Remember that worktrees isolate working directories and checked-out HEADs, but still share repository configuration, remotes, refs, branch upstreams, and the default stash. Treat changes to those shared resources as cross-session mutations.
@@ -38,7 +38,7 @@ Deploy only the current Git project. Keep every project isolated by repository, 
 
 - Treat an explicit request to deploy, publish, update, start, stop, or restart as authorization to modify only the current project.
 - For inspection or testing requests, perform only read-only operations unless deployment is also requested.
-- Never commit or push private keys or Codex credentials. Never print secret values.
+- Never commit or push private keys or agent credentials. Never print secret values.
 - Keep `.env`, tokens, passwords, database snapshots, account state, and other private runtime files outside Git by default. Exception: when the user explicitly requests a self-contained deployment bundle and the destination is a user-authorized private repository whose visibility and exact remote URL have been verified, include the runtime files required for direct deployment. Never send that private-state commit to a public, unverified, or differently owned remote.
 - A request to deploy to Tencent authorizes pushing the selected branch only to the verified `tencent` remote. Do not push `origin`, GitLab, GitHub, or any other remote unless the user explicitly requests that destination.
 - A deployment may transfer an already-selected project environment file when its source and destination are unambiguous. On first deployment, ask if the secret source is unclear; copy it outside Git, set mode `0600`, and validate with `docker compose ... config --quiet`.
@@ -55,7 +55,7 @@ Use this workflow when the user explicitly wants operations staff or Jenkins to 
    - the GitLab repository URL and project identity are exact;
    - GitLab visibility is private and access is limited to authorized users or systems.
 3. Resolve the latest database source using **Resolve the Database Data Source**. Export a fresh, consistent snapshot from that selected active database, verify it with `pg_restore --list` or the project's restore check, and replace superseded deployable snapshots rather than accumulating ambiguous alternatives.
-4. Include only the runtime state required to reproduce the approved deployment, which may include the production env file, verified database snapshot, account data, migrations, contract/object assets, immutable image references, Compose files, Dockerfiles, and reverse-proxy template. Never include SSH private keys, Codex credentials, host keys, or unrelated server files.
+4. Include only the runtime state required to reproduce the approved deployment, which may include the production env file, verified database snapshot, account data, migrations, contract/object assets, immutable image references, Compose files, Dockerfiles, and reverse-proxy template. Never include SSH private keys, agent credentials, host keys, or unrelated server files.
 5. Make the repository's default Compose path self-bootstrapping on a fresh volume: apply migrations, restore the approved snapshot or selected tables, initialize required file volumes, start services, and fail before Web startup when restore verification fails. Re-running the same command must be idempotent and must not duplicate or erase existing account data.
 6. Parameterize the public address so operations changes only the documented IP value. Keep database credentials, image digests, service topology, migration commands, and bootstrap behavior in the private bundle; do not require manual transfer of another file after clone.
 7. Test the exact bundle from a clean clone with a new isolated Compose project and fresh volumes. Run the documented one-command deployment, verify health, migration revision, account counts, representative business counts, file assets, and a second idempotent invocation.
