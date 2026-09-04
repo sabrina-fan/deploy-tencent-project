@@ -3,10 +3,10 @@
 Add a section like this to the project's nearest `AGENTS.md` when deployment values cannot be inferred safely:
 
 ```markdown
-## Tencent deployment
+## Remote deployment
 
 - Project name: `<repository-basename>`
-- SSH alias: `tencent-dev`
+- SSH alias: `<your-ssh-alias>`
 - Deployment branch: `<branch>`
 - Existing branch upstream: `<remote-and-merge-ref-or-unset>`
 - Compose project name: `<project>`
