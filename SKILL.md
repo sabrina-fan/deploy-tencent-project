@@ -1,6 +1,6 @@
 ---
 name: deploy-tencent-project
-description: Deploy and test completed local projects on a Tencent Cloud host using Git, SSH, Docker Compose, health checks, SSH tunnels, and browser/API tests. Use whenever the user asks to publish, deploy, redeploy, update, restart, inspect, or test a current project on the cloud server — including first-time setup and isolated multi-project deployments. The skill keeps every project isolated by repo, deployment directory, Compose project name, ports, containers, networks, and volumes.
+description: Deploy and test completed local projects on a remote cloud host using Git, SSH, Docker Compose, health checks, SSH tunnels, and browser/API tests. Use when the user asks to publish, deploy, redeploy, update, restart, inspect, or test a current project on the server, including first-time setup and isolated multi-project deployments. Do not use for local development, writing source code, or configuring CI/CD pipelines — use normal development workflow for those.
 ---
 
 # Deploy Tencent Project
@@ -9,10 +9,10 @@ Deploy only the current Git project. Keep every project isolated by repository, 
 
 ## Fixed Environment
 
-- Use SSH alias `tencent-dev` as user `ubuntu`; never hard-code its IP.
+- Use the SSH alias configured for the target host (default `tencent-dev`); never hard-code its IP.
 - Target `linux/amd64`.
-- Store the bare repository at `/home/ubuntu/git/<project>.git`.
-- Store the deployment checkout at `/home/ubuntu/projects/<project>`.
+- Store the bare repository at `~/git/<project>.git` under the SSH user's home directory.
+- Store the deployment checkout at `~/projects/<project>`.
 - Treat the local repository as the source of truth. Never edit deployed source directly.
 - Apply local RTK rules locally; do not assume `rtk` exists remotely.
 
@@ -98,10 +98,10 @@ The operator may first copy the tracked private env file to a mode-`0600` host p
 
 When the remote project does not exist:
 
-1. Create `/home/ubuntu/git/<project>.git` as a bare Git repository.
-2. Add local remote `tencent` pointing to `tencent-dev:/home/ubuntu/git/<project>.git`. If `tencent` already points elsewhere, stop.
+1. Create `~/git/<project>.git` as a bare Git repository on the remote host.
+2. Add local remote `tencent` pointing to `tencent-dev:~/git/<project>.git`. If `tencent` already points elsewhere, stop.
 3. Push with an explicit refspec, for example `git push tencent HEAD:refs/heads/<branch>`, without changing the local branch upstream.
-4. Clone that branch into `/home/ubuntu/projects/<project>`.
+4. Clone that branch into `~/projects/<project>` on the remote host.
 5. Verify local, bare-repository, and checkout SHAs match.
 
 Do not reuse or replace an existing same-name path unless it clearly belongs to this repository.
