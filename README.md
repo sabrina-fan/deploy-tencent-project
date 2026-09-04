@@ -22,7 +22,7 @@ https://github.com/sabrina-fan/deploy-tencent-project
 
 ## 配置
 
-- **SSH 别名**：在 `~/.ssh/config` 里配置一个 SSH 别名（如 `tencent-dev`）指向你的服务器，永远不硬编码 IP。
+- **SSH 别名**：在 `~/.ssh/config` 里配置一个 SSH 别名（如 `my-server`）指向你的云服务器，永远不硬编码 IP。
 - **SSH 用户主目录**：裸仓存放在 `~/git/<project>.git`，部署检出到 `~/projects/<project>`，均在 SSH 用户主目录下。
 - **目标平台**：默认 `linux/amd64`。
 - **项目配置**：在项目的 `AGENTS.md` 里添加部署配置段，写明项目专属端口、compose 文件、健康路径等，模板见 [references/project-config.md](references/project-config.md)。
