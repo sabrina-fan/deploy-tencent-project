@@ -3,13 +3,13 @@ name: deploy-tencent-project
 description: Deploy and test completed local projects on a remote cloud host using Git, SSH, Docker Compose, health checks, SSH tunnels, and browser/API tests. Use when the user asks to publish, deploy, redeploy, update, restart, inspect, or test a current project on the server, including first-time setup and isolated multi-project deployments. Do not use for local development, writing source code, or configuring CI/CD pipelines — use normal development workflow for those.
 ---
 
-# Deploy Tencent Project
+# Deploy Remote Project
 
 Deploy only the current Git project. Keep every project isolated by repository, deployment directory, Compose project name, ports, containers, networks, and volumes.
 
 ## Fixed Environment
 
-- Use the SSH alias configured for the target host (default `tencent-dev`); never hard-code its IP.
+- Use the SSH alias configured for the target host (e.g. `my-server`); never hard-code its IP.
 - Target `linux/amd64`.
 - Store the bare repository at `~/git/<project>.git` under the SSH user's home directory.
 - Store the deployment checkout at `~/projects/<project>`.
@@ -23,7 +23,7 @@ Deploy only the current Git project. Keep every project isolated by repository, 
 - Never switch, reset, clean, or remove another task's worktree. Keep the deployment worktree until deployment and verification finish.
 - Remember that worktrees isolate working directories and checked-out HEADs, but still share repository configuration, remotes, refs, branch upstreams, and the default stash. Treat changes to those shared resources as cross-session mutations.
 - Before pushing, record the selected branch's existing `branch.<name>.remote` and `branch.<name>.merge` values. Never use `git push -u` or `--set-upstream` on an existing or shared branch unless the user explicitly asks to change its upstream.
-- Push with an explicit destination ref, such as `git push tencent HEAD:refs/heads/<branch>`. Afterward, verify the recorded upstream is unchanged and the exact `tencent` ref resolves to the intended SHA.
+- Push with an explicit destination ref, such as `git push deploy HEAD:refs/heads/<branch>`. Afterward, verify the recorded upstream is unchanged and the exact `deploy` ref resolves to the intended SHA.
 
 ## Resolve Project Configuration
 
@@ -40,7 +40,7 @@ Deploy only the current Git project. Keep every project isolated by repository, 
 - For inspection or testing requests, perform only read-only operations unless deployment is also requested.
 - Never commit or push private keys or agent credentials. Never print secret values.
 - Keep `.env`, tokens, passwords, database snapshots, account state, and other private runtime files outside Git by default. Exception: when the user explicitly requests a self-contained deployment bundle and the destination is a user-authorized private repository whose visibility and exact remote URL have been verified, include the runtime files required for direct deployment. Never send that private-state commit to a public, unverified, or differently owned remote.
-- A request to deploy to Tencent authorizes pushing the selected branch only to the verified `tencent` remote. Do not push `origin`, GitLab, GitHub, or any other remote unless the user explicitly requests that destination.
+- A request to deploy to the server authorizes pushing the selected branch only to the verified `deploy` remote. Do not push `origin`, GitLab, GitHub, or any other remote unless the user explicitly requests that destination.
 - A deployment may transfer an already-selected project environment file when its source and destination are unambiguous. On first deployment, ask if the secret source is unclear; copy it outside Git, set mode `0600`, and validate with `docker compose ... config --quiet`.
 - Never change SSH, firewall, DNS, APT, global Docker settings, or another project without explicit approval.
 - Never run destructive Git commands, Docker prune, delete volumes, delete databases, or run migrations without explicit approval.
@@ -49,9 +49,9 @@ Deploy only the current Git project. Keep every project isolated by repository, 
 
 Use this workflow when the user explicitly wants operations staff or Jenkins to clone a private Git repository and deploy without separately transferring environment files, databases, contracts, or other runtime assets.
 
-1. Keep the local repository as the only delivery source of truth. Do not create the GitLab delivery commit from the Tencent deployment checkout, and do not configure Tencent-to-GitLab SSH credentials as part of this workflow.
+1. Keep the local repository as the only delivery source of truth. Do not create the GitLab delivery commit from the remote deployment checkout, and do not configure server-to-GitLab SSH credentials as part of this workflow.
 2. Verify every destination before staging private state:
-   - the Tencent bare repository belongs to the current project;
+   - the remote bare repository belongs to the current project;
    - the GitLab repository URL and project identity are exact;
    - GitLab visibility is private and access is limited to authorized users or systems.
 3. Resolve the latest database source using **Resolve the Database Data Source**. Export a fresh, consistent snapshot from that selected active database, verify it with `pg_restore --list` or the project's restore check, and replace superseded deployable snapshots rather than accumulating ambiguous alternatives.
@@ -59,8 +59,8 @@ Use this workflow when the user explicitly wants operations staff or Jenkins to 
 5. Make the repository's default Compose path self-bootstrapping on a fresh volume: apply migrations, restore the approved snapshot or selected tables, initialize required file volumes, start services, and fail before Web startup when restore verification fails. Re-running the same command must be idempotent and must not duplicate or erase existing account data.
 6. Parameterize the public address so operations changes only the documented IP value. Keep database credentials, image digests, service topology, migration commands, and bootstrap behavior in the private bundle; do not require manual transfer of another file after clone.
 7. Test the exact bundle from a clean clone with a new isolated Compose project and fresh volumes. Run the documented one-command deployment, verify health, migration revision, account counts, representative business counts, file assets, and a second idempotent invocation.
-8. Commit locally once. Push that exact local commit with explicit refspecs to the Tencent bare repository and the verified private GitLab branch. Use the same branch name at both destinations unless the user explicitly requests otherwise.
-9. Verify equality by SHA and tree, not by branch labels alone: local `HEAD`, Tencent bare ref, Tencent checkout, GitLab ref, and the deployed OCI revision must match. A GitLab push from an identical local tree is valid even when the Tencent host cannot reach GitLab.
+8. Commit locally once. Push that exact local commit with explicit refspecs to the remote bare repository and the verified private GitLab branch. Use the same branch name at both destinations unless the user explicitly requests otherwise.
+9. Verify equality by SHA and tree, not by branch labels alone: local `HEAD`, remote bare ref, remote checkout, GitLab ref, and the deployed OCI revision must match. A GitLab push from an identical local tree is valid even when the server cannot reach GitLab.
 10. Remove or rewrite superseded database artifacts from reachable private Git history only when the user explicitly requests database-history cleanup. Re-verify and force-push each authorized private destination deliberately; never broaden the rewrite to unrelated branches.
 
 The intended operator experience after clone is one documented Compose invocation, for example:
@@ -79,7 +79,7 @@ The operator may first copy the tracked private env file to a mode-`0600` host p
 1. Check `git status`, branch, remotes, and HEAD SHA.
 2. Deploy committed HEAD by default. If relevant changes are uncommitted, stop and ask whether to include and commit them.
 3. Run documented formatting, type, unit, integration, and build checks that are practical locally.
-4. Verify non-interactive SSH with `ssh -o BatchMode=yes tencent-dev true`. If the server accepts the public key but signing fails, check `ssh-add -l` and `ssh -vv`; ask the user to unlock the encrypted key locally (for example with `ssh-add --apple-use-keychain ...`). Never request or handle the passphrase in chat.
+4. Verify non-interactive SSH with `ssh -o BatchMode=yes <ssh-alias> true`. If the server accepts the public key but signing fails, check `ssh-add -l` and `ssh -vv`; ask the user to unlock the encrypted key locally (for example with `ssh-add --apple-use-keychain ...`). Never request or handle the passphrase in chat.
 5. Check remote OS, architecture, disk, memory, Git, Docker, Compose, Docker access, existing paths, containers, and listening ports.
 6. Check Docker Hub or the project's configured registry connectivity before a first image pull. Also inspect reverse-proxy ownership for ports that appear occupied or publicly routed.
 7. Stop on authentication failure, insufficient resources, dirty remote checkout, port conflict, or conflicting Git remote. Do not weaken security or overwrite state.
@@ -99,8 +99,8 @@ The operator may first copy the tracked private env file to a mode-`0600` host p
 When the remote project does not exist:
 
 1. Create `~/git/<project>.git` as a bare Git repository on the remote host.
-2. Add local remote `tencent` pointing to `tencent-dev:~/git/<project>.git`. If `tencent` already points elsewhere, stop.
-3. Push with an explicit refspec, for example `git push tencent HEAD:refs/heads/<branch>`, without changing the local branch upstream.
+2. Add local remote `deploy` pointing to `<ssh-alias>:~/git/<project>.git`. If `deploy` already points elsewhere, stop.
+3. Push with an explicit refspec, for example `git push deploy HEAD:refs/heads/<branch>`, without changing the local branch upstream.
 4. Clone that branch into `~/projects/<project>` on the remote host.
 5. Verify local, bare-repository, and checkout SHAs match.
 
@@ -108,7 +108,7 @@ Do not reuse or replace an existing same-name path unless it clearly belongs to 
 
 ## Update an Existing Project
 
-1. Push the selected branch with `git push tencent HEAD:refs/heads/<branch>`; do not change its upstream.
+1. Push the selected branch with `git push deploy HEAD:refs/heads/<branch>`; do not change its upstream.
 2. Verify the remote checkout is clean and on the intended branch.
 3. Update it with fast-forward-only Git operations.
 4. Verify the local SHA, bare-repository ref, and checkout SHA are identical before building.
@@ -153,7 +153,7 @@ On low-memory hosts, pull and build sequentially and recheck free disk and memor
 - Build affected images only after the checkout reaches the intended committed SHA. Prefer an OCI `org.opencontainers.image.revision=<sha>` label when the project supports it; otherwise preserve the build ordering plus the resulting image IDs as provenance evidence.
 - After any later commit, reassess affected services. Rebuild and recreate every service whose build context, Dockerfile, Compose runtime configuration, or mounted source changed.
 - Do not report the final checkout SHA as the running revision when an affected container still uses an image built from an earlier SHA. If a later commit affects only documentation or unused deployment assets, state that classification and why no application image rebuild was required.
-- After startup, compare each affected service's running image ID/digest and creation time with the pre-deployment snapshot, and verify the local SHA, `tencent` ref, bare ref, and remote checkout SHA again.
+- After startup, compare each affected service's running image ID/digest and creation time with the pre-deployment snapshot, and verify the local SHA, `deploy` ref, bare ref, and remote checkout SHA again.
 
 ### Object storage browser access
 
@@ -196,7 +196,7 @@ Validate in three layers. Use the deepest coverage at the cheapest, safest layer
 - Use local Playwright, ego-browser, or another real browser to exercise the complete changed feature set, critical user journeys, relevant roles, validation errors, responsive layouts, console errors, and failed network requests.
 - Fix failures locally and rerun the affected local suites before pushing. Do not use the production public endpoint as the main development test environment.
 
-### 2. Tencent loopback or tunnel medium validation
+### 2. Server loopback or tunnel medium validation
 
 1. Inspect `docker compose -p <project> ps` and relevant recent logs.
 2. Run health and API checks on the server against `127.0.0.1:<remote-port>`.
@@ -210,7 +210,7 @@ Validate in three layers. Use the deepest coverage at the cheapest, safest layer
    ssh -N \
      -L 5173:127.0.0.1:<remote-frontend-port> \
      -L 8000:127.0.0.1:<remote-backend-port> \
-     tencent-dev
+     <ssh-alias>
    ```
 
 8. Test the tunneled application at `http://localhost:5173` and API at `http://localhost:8000`.
@@ -232,7 +232,7 @@ Remember that `localhost` is the local tunnel endpoint, not the server's public 
 Report:
 
 - Project, branch, and deployed SHA
-- For a self-contained private delivery, the GitLab project/branch SHA and proof that its tree equals the Tencent bare ref, Tencent checkout, local commit, and running OCI revision
+- For a self-contained private delivery, the GitLab project/branch SHA and proof that its tree equals the remote bare ref, remote checkout, local commit, and running OCI revision
 - Chosen database data strategy and the exact source/target provenance
 - Previous and current checkout SHAs, database revisions, and running-image provenance for affected services
 - Source/target account counts and representative or all-table row-count verification; never report schema revision alone as proof that data was migrated
@@ -241,7 +241,7 @@ Report:
 - Canonical Compose files and ordered env-file paths, without secret contents
 - Whether object-storage data was copied, verified unnecessary, or remains pending
 - Commands and test results
-- Validation performed at each layer: local deep, Tencent loopback/tunnel medium, and public light; state any risk-based expansion explicitly
+- Validation performed at each layer: local deep, server loopback/tunnel medium, and public light; state any risk-based expansion explicitly
 - Container health and relevant errors
 - Local tunnel command and test URLs
 - Public URL or reverse-proxy status, if configured
